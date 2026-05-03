@@ -472,7 +472,8 @@ function wireControls() {
 }
 
 async function registerViewerSession() {
-  const res = await fetch(`${SIGNALING_URL}/session/viewer`, {
+  const base = String(SIGNALING_URL || "").replace(/\/+$/, "");
+  const res = await fetch(`${base}/session/viewer`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
@@ -483,6 +484,11 @@ async function registerViewerSession() {
   });
   const data = await res.json().catch(() => ({}));
   if (res.status === 404) {
+    if (data.hint) {
+      throw new Error(
+        `${data.error || "Not found"} — ${data.hint} (check ${base}/health)`
+      );
+    }
     throw new Error("SESSION_MISSING");
   }
   if (!res.ok) {
@@ -722,6 +728,7 @@ async function bootstrapViewer() {
   } catch (err) {
     console.warn("Signaling resolve failed:", err);
   }
+  SIGNALING_URL = String(SIGNALING_URL || "").replace(/\/+$/, "");
   syncSessionChrome();
   void startViewer();
 }

@@ -1275,7 +1275,8 @@ function attachSignalListener() {
 }
 
 async function registerHostSession() {
-  const res = await fetch(`${SIGNALING_URL}/session/host`, {
+  const base = String(SIGNALING_URL || "").replace(/\/+$/, "");
+  const res = await fetch(`${base}/session/host`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
@@ -1286,7 +1287,14 @@ async function registerHostSession() {
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new Error(data.error || `Host registration failed (${res.status})`);
+    let msg = data.error || `Host registration failed (${res.status})`;
+    if (res.status === 404) {
+      msg =
+        data.hint ||
+        data.error ||
+        `Signaling 404 — open ${base}/health in a browser. If that fails, fix signaling-config.js (base URL only, no /path) or redeploy the Node service on Render.`;
+    }
+    throw new Error(msg);
   }
 }
 
@@ -1466,6 +1474,7 @@ async function bootstrapHost() {
   } catch (err) {
     console.warn("Signaling resolve failed:", err);
   }
+  SIGNALING_URL = String(SIGNALING_URL || "").replace(/\/+$/, "");
   if (signalingHintEl) signalingHintEl.textContent = SIGNALING_URL;
   await refreshControllableTabs().catch((e) => {
     console.warn("Could not load tab list:", e);

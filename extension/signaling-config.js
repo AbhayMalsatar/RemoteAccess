@@ -4,4 +4,4 @@
 //   This PC only:                 "http://localhost:3000"
 //   Wi‑Fi / LAN (host PC's IP):    "http://192.168.1.10:3000"
 //   Production / tunnel:          "https://signal.example.com"
-globalThis.__REMOTE_ACCESS_SIGNALING__ = "http://localhost:3000";
+globalThis.__REMOTE_ACCESS_SIGNALING__ = "https://remote-access-signaling.onrender.com";

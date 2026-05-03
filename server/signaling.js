@@ -41,6 +41,11 @@ function parseJsonBody(req) {
   });
 }
 
+function normalizeHttpPath(pathname) {
+  if (!pathname || pathname === "/") return "/";
+  return pathname.replace(/\/+$/, "") || "/";
+}
+
 function validSessionKey(key) {
   return typeof key === "string" && SESSION_KEY_RE.test(key);
 }
@@ -239,6 +244,7 @@ function handleEvents(req, res, url) {
 
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
+  const path = normalizeHttpPath(url.pathname);
 
   if (req.method === "OPTIONS") {
     res.writeHead(204, {
@@ -252,37 +258,42 @@ const server = http.createServer((req, res) => {
 
   res.setHeader("access-control-allow-origin", "*");
 
-  if (req.method === "GET" && url.pathname === "/health") {
+  if (req.method === "GET" && path === "/health") {
     sendJson(res, 200, { ok: true, sessions: sessions.size, peers: sseClients.size });
     return;
   }
 
-  if (req.method === "GET" && url.pathname === "/session/status") {
+  if (req.method === "GET" && path === "/session/status") {
     handleSessionStatus(req, res, url);
     return;
   }
 
-  if (req.method === "POST" && url.pathname === "/session/host") {
+  if (req.method === "POST" && path === "/session/host") {
     handleRegisterHost(req, res);
     return;
   }
 
-  if (req.method === "POST" && url.pathname === "/session/viewer") {
+  if (req.method === "POST" && path === "/session/viewer") {
     handleRegisterViewer(req, res);
     return;
   }
 
-  if (req.method === "GET" && url.pathname === "/events") {
+  if (req.method === "GET" && path === "/events") {
     handleEvents(req, res, url);
     return;
   }
 
-  if (req.method === "POST" && url.pathname === "/signal") {
+  if (req.method === "POST" && path === "/signal") {
     handleSignal(req, res);
     return;
   }
 
-  sendJson(res, 404, { ok: false, error: "Not found" });
+  sendJson(res, 404, {
+    ok: false,
+    error: "Not found",
+    path: url.pathname,
+    hint: "Use base URL only in signaling-config.js (e.g. https://your-service.onrender.com), no extra path."
+  });
 });
 
 function printLanHints(listenPort) {
