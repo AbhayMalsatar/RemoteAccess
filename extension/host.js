@@ -1458,10 +1458,14 @@ async function preRegisterHost() {
       "ok"
     );
   } catch (err) {
-    setStatus(
-      err.message || "Signaling server unreachable. Run: node server/signaling.js",
-      "bad"
-    );
+    const base = String(SIGNALING_URL || "").replace(/\/+$/, "");
+    const hosted =
+      /onrender\.com|^\s*https:\/\//i.test(SIGNALING_URL || "") &&
+      !/^https?:\/\/(localhost|127\.0\.0\.1)/i.test(base);
+    const hint = hosted
+      ? ` Try ${base}/health in a browser (Render may need 30–120s to wake).`
+      : "";
+    setStatus(err.message || `Signaling server unreachable.${hint} Run node server/signaling.js if using localhost.`, "bad");
   }
 }
 

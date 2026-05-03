@@ -101,6 +101,51 @@ function persistViewerSession() {
   void chrome.storage.local.set({ sessionKey });
 }
 
+/** Long timeout: cheap hosts return slowly when asleep; wakeup pages are often HTML, not JSON. */
+const SIGNALING_FETCH_MS = 120000;
+
+async function fetchSessionStatusProbe(key) {
+  const base = String(SIGNALING_URL || "").replace(/\/+$/, "");
+  const url = `${base}/session/status?sessionKey=${encodeURIComponent(key)}`;
+  const init =
+    typeof AbortSignal !== "undefined" &&
+    typeof AbortSignal.timeout === "function"
+      ? { signal: AbortSignal.timeout(SIGNALING_FETCH_MS) }
+      : {};
+  try {
+    const r = await fetch(url, init);
+    const text = await r.text();
+    let data = {};
+    if (text) {
+      try {
+        data = JSON.parse(text);
+      } catch {
+        return { transient: true, status: r.status };
+      }
+    }
+    return { transient: false, ok: r.ok, data, status: r.status };
+  } catch {
+    return { transient: true };
+  }
+}
+
+function coldStartMessaging() {
+  const u = SIGNALING_URL || "";
+  const hosted =
+    /onrender\.com|render\.com|railway|fly\.dev|^\s*https:\/\//i.test(u);
+  return hosted
+    ? " Hosted signaling may be waking up — first response can take 30–120s."
+    : "";
+}
+
+function unreachableMessaging() {
+  const base = String(SIGNALING_URL || "").replace(/\/+$/, "");
+  const local = /^https?:\/\/(localhost|127\.0\.0\.1)/i.test(base);
+  return local
+    ? ` Cannot reach signaling at ${SIGNALING_URL}. Run node server/signaling.js locally and match signaling-config.js on host and viewer.`
+    : ` Cannot reach signaling at ${SIGNALING_URL}. Confirm ${base}/health in a browser returns JSON and reload the extension. For Render free tier, retry after waking the service.${coldStartMessaging()}`;
+}
+
 function setBanner(kind, message) {
   if (!message) {
     bannerEl.className = "";
@@ -496,29 +541,36 @@ async function registerViewerSession() {
   }
 }
 
-async function waitForSessionRegistration(timeoutMs = 90000) {
+async function waitForSessionRegistration(timeoutMs = 180000) {
   const start = Date.now();
   setBanner("info", "Waiting for host session to be created…");
   setStatus("<strong>Waiting</strong> — host must open host page first.", "busy");
 
   while (Date.now() - start < timeoutMs) {
-    try {
-      const r = await fetch(
-        `${SIGNALING_URL}/session/status?sessionKey=${encodeURIComponent(sessionKey)}`
-      );
-      const data = await r.json();
-      if (data.ok && data.sessionExists) {
-        return true;
-      }
-    } catch {
+    const result = await fetchSessionStatusProbe(sessionKey);
+    if (result.transient) {
       setBanner(
-        "error",
-        `Cannot reach signaling at ${SIGNALING_URL}. Run node server/signaling.js on the host PC, open firewall port, and match signaling-config.js on both machines.`
+        "info",
+        `Contacting signaling…${coldStartMessaging()}`.trim()
       );
-      setStatus("<strong>Offline</strong> — signaling unreachable.", "bad");
-      return false;
+      await new Promise((r) => setTimeout(r, 2500));
+      continue;
+    }
+    if (!result.ok || !result.data || result.data.ok === false) {
+      await new Promise((r) => setTimeout(r, 600));
+      continue;
+    }
+    if (result.data.sessionExists) {
+      return true;
     }
     await new Promise((r) => setTimeout(r, 500));
+  }
+
+  const lastProbe = await fetchSessionStatusProbe(sessionKey);
+  if (lastProbe.transient) {
+    setBanner("error", unreachableMessaging());
+    setStatus("<strong>Offline</strong> — signaling unreachable.", "bad");
+    return false;
   }
 
   setBanner("error", "Session code was not found in time. Ask host to open host page and share this 8-digit code.");
@@ -526,29 +578,26 @@ async function waitForSessionRegistration(timeoutMs = 90000) {
   return false;
 }
 
-async function waitForHostListening(timeoutMs = 90000) {
+async function waitForHostListening(timeoutMs = 180000) {
   const start = Date.now();
   setBanner("info", "Waiting for host to come online and open signaling…");
   setStatus("<strong>Waiting</strong> — host must start sharing first.", "busy");
 
   while (Date.now() - start < timeoutMs) {
-    let data;
-    try {
-      const r = await fetch(
-        `${SIGNALING_URL}/session/status?sessionKey=${encodeURIComponent(sessionKey)}`
-      );
-      data = await r.json();
-    } catch {
+    const result = await fetchSessionStatusProbe(sessionKey);
+    if (result.transient) {
       setBanner(
-        "error",
-        `Cannot reach signaling at ${SIGNALING_URL}. Run node server/signaling.js on the host PC, open firewall port, and match signaling-config.js on both machines.`
+        "info",
+        `Contacting signaling…${coldStartMessaging()}`.trim()
       );
-      setStatus("<strong>Offline</strong> — signaling unreachable.", "bad");
-      return false;
+      setStatus("<strong>Waiting</strong> — retrying signaling…", "busy");
+      await new Promise((r) => setTimeout(r, 2500));
+      continue;
     }
 
-    if (!data.ok) {
-      await new Promise((r) => setTimeout(r, 400));
+    const data = result.data;
+    if (!data || data.ok === false) {
+      await new Promise((r) => setTimeout(r, 500));
       continue;
     }
 
@@ -570,6 +619,13 @@ async function waitForHostListening(timeoutMs = 90000) {
     }
 
     await new Promise((r) => setTimeout(r, 450));
+  }
+
+  const lastProbe = await fetchSessionStatusProbe(sessionKey);
+  if (lastProbe.transient) {
+    setBanner("error", unreachableMessaging());
+    setStatus("<strong>Offline</strong> — signaling unreachable.", "bad");
+    return false;
   }
 
   setBanner(
