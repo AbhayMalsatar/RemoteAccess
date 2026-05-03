@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: remote-access-signaling
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
