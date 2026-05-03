@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "Remote Access",
+  "version": "0.2.0",
+  "description": "Secure session-based remote viewing and control (WebRTC + signaling).",
+  "permissions": [
+    "desktopCapture",
+    "storage",
+    "nativeMessaging",
+    "tabs",
+    "scripting"
+  ],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Remote Control",
+    "default_popup": "popup.html"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "viewer.html",
+        "viewer.js"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ]
+}

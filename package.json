@@ -1,0 +1,12 @@
+{
+  "name": "remote-access-signaling",
+  "private": true,
+  "version": "0.2.0",
+  "description": "Signaling HTTP server for Remote Access WebRTC sessions",
+  "scripts": {
+    "start": "node server/signaling.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

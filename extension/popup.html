@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Remote Access</title>
+    <style>
+      :root {
+        --bg: #0f1115;
+        --panel: #171a21;
+        --border: #2a3140;
+        --text: #e8eaed;
+        --muted: #9aa0a6;
+        --accent: #4c8bf5;
+        --accent-dim: #3a6bc4;
+        --danger: #e87171;
+        --radius: 10px;
+        --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        width: 320px;
+        font-family: var(--font);
+        font-size: 13px;
+        color: var(--text);
+        background: var(--bg);
+      }
+      .wrap {
+        padding: 14px;
+      }
+      h1 {
+        margin: 0 0 4px;
+        font-size: 15px;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+      }
+      .sub {
+        margin: 0 0 14px;
+        font-size: 11px;
+        color: var(--muted);
+        line-height: 1.4;
+      }
+      label {
+        display: block;
+        margin-top: 10px;
+        margin-bottom: 4px;
+        font-size: 11px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      input {
+        width: 100%;
+        padding: 8px 10px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--bg);
+        color: var(--text);
+        font-size: 13px;
+      }
+      input:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px rgba(76, 139, 245, 0.2);
+      }
+      .session-row {
+        display: flex;
+        gap: 6px;
+        align-items: stretch;
+        margin-top: 4px;
+      }
+      .session-row input {
+        flex: 1;
+        font-family: ui-monospace, monospace;
+        font-size: 11px;
+      }
+      button {
+        border: none;
+        border-radius: 8px;
+        font-family: var(--font);
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        padding: 9px 12px;
+        transition: background 0.15s, transform 0.05s;
+      }
+      button:active {
+        transform: scale(0.98);
+      }
+      .btn-primary {
+        width: 100%;
+        margin-top: 10px;
+        background: var(--accent);
+        color: #fff;
+      }
+      .btn-primary:hover {
+        background: var(--accent-dim);
+      }
+      .btn-secondary {
+        background: var(--panel);
+        color: var(--text);
+        border: 1px solid var(--border);
+      }
+      .btn-secondary:hover {
+        background: #1e232e;
+      }
+      .btn-small {
+        padding: 8px 10px;
+        flex-shrink: 0;
+      }
+      .row2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-top: 10px;
+      }
+      .row2 button {
+        margin-top: 0;
+      }
+      .hint {
+        margin: 12px 0 0;
+        padding: 10px;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        font-size: 11px;
+        color: var(--muted);
+        line-height: 1.45;
+      }
+      .hint strong {
+        color: var(--text);
+      }
+      #toast {
+        margin-top: 10px;
+        font-size: 11px;
+        color: var(--danger);
+        min-height: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Remote Access</h1>
+      <p class="sub">
+        Same session code on host &amp; viewer. Set the signaling server URL in
+        <code style="color: var(--accent)">signaling-config.js</code> (reload extension after editing).
+      </p>
+
+      <label for="hostSessionCode">Host session code</label>
+      <div class="session-row">
+        <input id="hostSessionCode" readonly placeholder="Generate code" spellcheck="false" autocomplete="off" />
+        <button type="button" class="btn-secondary btn-small" id="copyKeyBtn" title="Copy">Copy</button>
+      </div>
+      <button type="button" class="btn-secondary" id="newKeyBtn" style="width: 100%; margin-top: 8px">Generate new code</button>
+      <button type="button" class="btn-primary" id="hostBtn">Start host</button>
+
+      <label for="viewerSessionCode">Viewer session code</label>
+      <input id="viewerSessionCode" placeholder="Enter 8 digit code from host" maxlength="8" spellcheck="false" autocomplete="off" />
+      <div class="row2">
+        <button type="button" class="btn-secondary" id="viewerBtn">Start viewer</button>
+        <button type="button" class="btn-secondary" id="connectBtn">Open viewer tab</button>
+      </div>
+
+      <p class="hint">
+        <strong>Security:</strong> Session code must match on both sides. Keep the code private. Use two profiles or two machines; never share your screen back into the viewer.
+      </p>
+      <div id="toast" aria-live="polite"></div>
+    </div>
+    <script src="popup.js"></script>
+  </body>
+</html>

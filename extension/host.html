@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Remote host</title>
+    <style>
+      :root {
+        --bg: #0c0e12;
+        --panel: #151922;
+        --panel2: #1a1f2a;
+        --border: #2a3144;
+        --text: #e8eaed;
+        --muted: #8b939e;
+        --accent: #5b8def;
+        --accent-dim: #3d6ec9;
+        --good: #6fc79a;
+        --warn: #e8b44c;
+        --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        --radius: 12px;
+        --shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: var(--font);
+        font-size: 14px;
+        color: var(--text);
+        background: var(--bg);
+        line-height: 1.45;
+      }
+      .shell {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 20px 20px 32px;
+      }
+      .hero {
+        margin-bottom: 20px;
+      }
+      .hero h1 {
+        margin: 0 0 6px;
+        font-size: 22px;
+        font-weight: 650;
+        letter-spacing: -0.03em;
+      }
+      .hero p {
+        margin: 0;
+        font-size: 13px;
+        color: var(--muted);
+        max-width: 52ch;
+      }
+      .meta-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 16px;
+      }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .chip strong {
+        color: var(--text);
+        font-weight: 600;
+      }
+      .chip .code {
+        font-family: ui-monospace, monospace;
+        color: var(--accent);
+        font-size: 12px;
+      }
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(280px, 380px) 1fr;
+        gap: 20px;
+        align-items: start;
+      }
+      @media (max-width: 900px) {
+        .layout {
+          grid-template-columns: 1fr;
+        }
+      }
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 16px 18px;
+        box-shadow: var(--shadow);
+      }
+      .panel h2 {
+        margin: 0 0 12px;
+        font-size: 12px;
+        font-weight: 650;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+      }
+      .mode-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 14px;
+        flex-wrap: wrap;
+      }
+      .mode-label {
+        font-size: 13px;
+        color: var(--muted);
+      }
+      #captureBadge {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        padding: 6px 12px;
+        border-radius: 8px;
+        background: var(--panel2);
+        border: 1px solid var(--border);
+        color: var(--muted);
+      }
+      #captureBadge.idle {
+        color: var(--muted);
+      }
+      #captureBadge.on {
+        border-color: rgba(91, 141, 239, 0.45);
+        color: var(--accent);
+        background: rgba(91, 141, 239, 0.08);
+      }
+      #captureBadge.live {
+        border-color: rgba(111, 199, 154, 0.45);
+        color: var(--good);
+        background: rgba(111, 199, 154, 0.1);
+      }
+      #tabControlHelp {
+        margin: 0 0 10px;
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+      label[for="tabSelect"] {
+        display: block;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 6px;
+      }
+      select#tabSelect {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: var(--bg);
+        color: var(--text);
+        font-size: 13px;
+        cursor: pointer;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238b939e' d='M3 4.5L6 8l3-3.5'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        padding-right: 36px;
+      }
+      select#tabSelect:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+      select#tabSelect:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(91, 141, 239, 0.2);
+      }
+      .btn-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 16px;
+      }
+      button {
+        border: none;
+        border-radius: 10px;
+        padding: 10px 18px;
+        font-family: var(--font);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: filter 0.15s, transform 0.06s;
+      }
+      button:active:not(:disabled) {
+        transform: scale(0.98);
+      }
+      button:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+      #startBtn {
+        flex: 1;
+        min-width: 140px;
+        background: linear-gradient(180deg, var(--accent) 0%, var(--accent-dim) 100%);
+        color: #fff;
+        padding-block: 12px;
+      }
+      #startBtn:hover:not(:disabled) {
+        filter: brightness(1.06);
+      }
+      #refreshTabsBtn {
+        background: var(--panel2);
+        color: var(--text);
+        border: 1px solid var(--border);
+      }
+      #refreshTabsBtn:hover:not(:disabled) {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      .preview-panel {
+        min-width: 0;
+      }
+      .preview-panel h2 {
+        margin: 0 0 10px;
+        font-size: 12px;
+        font-weight: 650;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+      }
+      .preview-frame {
+        border-radius: var(--radius);
+        overflow: hidden;
+        border: 1px solid var(--border);
+        background: #000;
+        box-shadow: var(--shadow);
+      }
+      #preview {
+        width: 100%;
+        max-height: min(58vh, 620px);
+        min-height: 180px;
+        object-fit: contain;
+        display: block;
+        vertical-align: middle;
+      }
+      #status {
+        margin-top: 14px;
+        padding: 12px 14px;
+        border-radius: 10px;
+        font-size: 13px;
+        line-height: 1.5;
+        color: var(--muted);
+        background: var(--panel2);
+        border: 1px solid var(--border);
+      }
+      #status.ok {
+        border-color: rgba(111, 199, 154, 0.35);
+        color: #a8dcc0;
+      }
+      #status.warn {
+        border-color: rgba(232, 180, 76, 0.35);
+        color: #e8d4a0;
+      }
+      #status.bad {
+        border-color: rgba(232, 113, 113, 0.35);
+        color: #f0b0b0;
+      }
+      .footer-hint {
+        margin-top: 18px;
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+      .footer-hint code {
+        font-family: ui-monospace, monospace;
+        font-size: 11px;
+        color: var(--accent);
+        word-break: break-all;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <header class="hero">
+        <h1>Share your screen</h1>
+        <p>
+          Start sharing so the viewer can see your display. When you capture a
+          <strong style="color: var(--text)">Chrome tab</strong>, pick which tab receives remote
+          clicks and typing.
+        </p>
+        <div class="meta-row">
+          <span class="chip"><strong>You</strong> <span id="metaPeer" class="code"></span></span>
+          <span class="chip"><strong>Viewer</strong> <span id="metaTarget" class="code"></span></span>
+          <span class="chip"><strong>Session</strong> <span id="metaSession" class="code"></span></span>
+        </div>
+      </header>
+
+      <div class="layout">
+        <section class="panel" aria-labelledby="control-heading">
+          <h2 id="control-heading">Session &amp; tab control</h2>
+          <div class="mode-row">
+            <span class="mode-label">Capture target</span>
+            <span id="captureBadge" class="idle">Not sharing</span>
+          </div>
+          <p id="tabControlHelp">
+            After you start, if you share a Chrome tab, choose the tab to control below. Window or
+            full-screen sharing uses the native helper for pointer and keyboard.
+          </p>
+          <label for="tabSelect">Tab for browser control</label>
+          <select id="tabSelect" aria-describedby="tabControlHelp"></select>
+          <div class="btn-row">
+            <button type="button" id="refreshTabsBtn">Refresh tab list</button>
+            <button type="button" id="startBtn">Start sharing</button>
+          </div>
+        </section>
+
+        <section class="preview-panel">
+          <h2>Local preview</h2>
+          <div class="preview-frame">
+            <video id="preview" autoplay playsinline muted></video>
+          </div>
+          <div id="status" role="status">
+            Idle — click Start sharing and choose a tab, window, or screen in the picker. Do not share
+            this host page (mirror loop).
+          </div>
+          <p class="footer-hint">
+            Signaling server:
+            <code id="signalingHint">…</code>
+            — edit <code>signaling-config.js</code> and reload the extension. Same URL on every PC using this build.
+          </p>
+        </section>
+      </div>
+    </div>
+    <script src="signaling-config.js"></script>
+    <script src="signaling-resolve.js"></script>
+    <script src="host.js"></script>
+  </body>
+</html>

@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Remote viewer</title>
+    <style>
+      :root {
+        --bg: #07080c;
+        --bar: rgba(12, 14, 18, 0.92);
+        --border: #2a3144;
+        --text: #e8eaed;
+        --muted: #8b939e;
+        --accent: #5b8def;
+        --accent-soft: rgba(91, 141, 239, 0.15);
+        --warn: #e8b44c;
+        --bad: #e87171;
+        --good: #6fc79a;
+        --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        --radius: 12px;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font);
+        font-size: 13px;
+      }
+      #app {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+      }
+      #topChrome {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 6px 12px;
+        min-height: 0;
+        background: var(--bar);
+        border-bottom: 1px solid var(--border);
+        backdrop-filter: blur(12px);
+      }
+      .brand {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        font-weight: 650;
+        font-size: 13px;
+        letter-spacing: -0.02em;
+      }
+      .brand span.sub {
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--muted);
+      }
+      #sessionPill {
+        font-family: ui-monospace, monospace;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        border: 1px solid rgba(91, 141, 239, 0.35);
+      }
+      #sessionPill.empty {
+        opacity: 0.55;
+        border-style: dashed;
+      }
+      #banner {
+        flex-shrink: 0;
+        display: none;
+        padding: 10px 16px;
+        font-size: 13px;
+        line-height: 1.45;
+        border-bottom: 1px solid var(--border);
+      }
+      #banner.show {
+        display: block;
+      }
+      #banner.info {
+        background: #141a24;
+        color: var(--text);
+      }
+      #banner.warn {
+        background: #221e14;
+        color: #f0d78a;
+      }
+      #banner.error {
+        background: #221418;
+        color: #ffb4b4;
+      }
+      #videoStage {
+        flex: 1;
+        min-height: 0;
+        position: relative;
+        background: radial-gradient(ellipse 80% 60% at 50% 40%, #141820 0%, var(--bg) 65%);
+      }
+      #videoWrap {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: stretch;
+        justify-content: stretch;
+        padding: 2px;
+        min-height: 0;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+      #remoteVideo {
+        flex: 1;
+        width: 100%;
+        height: 100%;
+        min-width: 0;
+        min-height: 0;
+        max-width: none;
+        max-height: none;
+        object-fit: contain;
+        object-position: center;
+        background: #000;
+        border-radius: 6px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+        touch-action: none;
+        cursor: crosshair;
+      }
+      #videoStage:fullscreen,
+      #videoStage:-webkit-full-screen {
+        background: #000;
+      }
+      #videoStage:fullscreen #videoWrap,
+      #videoStage:-webkit-full-screen #videoWrap {
+        padding: 0;
+      }
+      #videoStage:fullscreen #remoteVideo,
+      #videoStage:-webkit-full-screen #remoteVideo {
+        border-radius: 0;
+      }
+      #statusBar {
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 4px;
+        padding: 6px 12px 8px;
+        background: var(--bar);
+        border-top: 1px solid var(--border);
+        backdrop-filter: blur(12px);
+      }
+      .status-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      #statusDot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: var(--muted);
+        flex-shrink: 0;
+      }
+      #statusDot.ok {
+        background: var(--good);
+        box-shadow: 0 0 10px rgba(111, 199, 154, 0.45);
+      }
+      #statusDot.busy {
+        background: var(--warn);
+      }
+      #statusDot.bad {
+        background: var(--bad);
+      }
+      #statusText {
+        flex: 1;
+        min-width: 0;
+        font-size: 12px;
+        line-height: 1.45;
+        color: var(--muted);
+      }
+      #statusText strong {
+        color: var(--text);
+        font-weight: 600;
+      }
+      .bar-btn {
+        border: 1px solid var(--border);
+        background: var(--accent-soft);
+        color: var(--accent);
+        border-radius: 8px;
+        padding: 6px 12px;
+        font-size: 11px;
+        font-weight: 650;
+        cursor: pointer;
+        font-family: var(--font);
+      }
+      .bar-btn:hover {
+        border-color: var(--accent);
+        background: rgba(91, 141, 239, 0.22);
+      }
+      #fullscreenBtn {
+        margin-left: auto;
+      }
+      .mono {
+        font-family: ui-monospace, monospace;
+        font-size: 11px;
+        color: var(--accent);
+      }
+      #signalingFootnote {
+        font-size: 10px;
+        color: var(--muted);
+        opacity: 0.88;
+        line-height: 1.35;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      #signalingFootnote code {
+        font-family: ui-monospace, monospace;
+        font-size: 10px;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <header id="topChrome">
+        <div class="brand">
+          Remote viewer
+          <span class="sub">Live session</span>
+        </div>
+        <span id="sessionPill" class="empty">No code</span>
+      </header>
+      <div id="banner" role="alert"></div>
+      <main id="videoStage">
+        <div id="videoWrap">
+          <video id="remoteVideo" autoplay playsinline></video>
+        </div>
+      </main>
+      <footer id="statusBar">
+        <div class="status-row">
+          <span id="statusDot" aria-hidden="true"></span>
+          <div id="statusText"><strong>Viewer</strong> — starting…</div>
+          <button type="button" class="bar-btn" id="fullscreenBtn" title="Use entire monitor for remote video">
+            Fullscreen
+          </button>
+          <button type="button" class="bar-btn" id="reconnectBtn">Reconnect</button>
+        </div>
+        <div id="signalingFootnote"></div>
+      </footer>
+    </div>
+    <script src="signaling-config.js"></script>
+    <script src="signaling-resolve.js"></script>
+    <script src="viewer.js"></script>
+  </body>
+</html>

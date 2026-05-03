@@ -1,0 +1,9 @@
+{
+  "name": "com.remote.control",
+  "description": "Remote Control native host (macOS)",
+  "path": "/Users/abhaymalsatar/RemoteAccess/native/host-macos",
+  "type": "stdio",
+  "allowed_origins": [
+    "chrome-extension://pfmphiflamefcjaiknjbnklifnbndnfi/"
+  ]
+}
